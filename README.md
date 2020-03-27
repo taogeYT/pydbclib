@@ -4,39 +4,65 @@ pydbclib is a database utils for python
 ### Installation:
     pip install pydbclib
 
-#### usage:
+#### Usage:
 
-    from pydbclib import connection
-    with connection("test.db", driver="sqlite3") as db:
-        db.ddl('create table test (id varchar(4) primary key, name varchar(10))')
-        db.write("insert into test (id, name) values(:id, :name)", {'id':1, 'name':'test'}) # 返回行数
-        db.write_by_dict('test', {'id': 2, 'name': 'test2'}) # 返回行数
-        db.read("select * from test limit :1", [10]) # 返回元祖集合
-        db.read_dict("select * from test") # 返回字典集合
-        db.ddl('drop table test')
-    
-    # udf扩展
-    from pydbclib import Connection  
-    class MyUDF(Connection):
-        def total_data(self, table):  
-            return self.read("select count(*) from :1", table)
-
-    with MyUDF("oracle://lyt:lyt@local:1521/xe") as db:
-        count = db.total_data('test')
-        print("test表的总数量为:", count)
+    import pydbclib
+    # 使用with上下文，可以自动提交，自动关闭连接
+    with pydbclib.connect("sqlite:///:memory:") as db:
+        db.execute('CREATE TABLE foo(a integer, b varchar(20))')
+        
+        # # 数据库基础操作 # #
+        # 单个插入和批量插入，结果返回影响行数
+        record = {"a": 1, "b": "one"}
+        db.write("INSERT INTO foo(a,b) values(:a,:b)", record)
+        db.write_many("INSERT INTO foo(a,b) values(:a,:b)", [record]*10)
+        # 查询操作，返回生成器字典集合
+        db.read("select * from foo")
+        # 参数to_dict=False，返回生成器元祖集合
+        db.read("select * from foo", to_dict=False)
+        # 查询结果只返回一条记录：{"a": 1, "b": "one"}
+        db.read_one("select * from foo")
+        
+        # # 应对表的快捷操作 # #
+        # 插入单条和插入多条，输入参数字典的键值必须和表中字段同名
+        db.get_table("foo").insert_one({"a": 1, "b": "one"})
+        db.get_table("foo").insert_many([{"a": 1, "b": "one"}])
+        # 查询字段a=1所有记录
+        db.get_table("foo").find({"a": 1})
+        # 也可以直接写成sql条件表达式，下面几个函数的条件部分都可以写成sql条件表达式
+        db.get_table("foo").find("a=1")
+        # 查询字段a=1第一条记录
+        db.get_table("foo").find_one({"a": 1})
+        # 将a=1那条记录的b字段值更新为"first"
+        db.get_table("foo").update({"a": 1}, {"b": "first"})
+        # 将a=1那条记录删除
+        db.get_table("foo").delete({"a": 1})
+        
+        db.execute('DROP TABLE foo')
 
 
 #### 常用数据库连接  
 Common Driver  
 
+    # 使用普通数据库驱动连接，driver参数必须指定驱动包名称，如pymysql包参数driver='pymysql',其他参数和driver参数指定的包的连接参数一致
+    # 连接mysql
+    db = pydbclib.connect(driver="pymysql", user="user", password="password", database="test")
     # 连接oracle
-    db = connection('jwdn/password@local:1521/xe', driver="cx_Oracle")
+    db = pydbclib.connect('user/password@local:1521/xe', driver="cx_Oracle")
     # 通过odbc方式连接
-    db = connection('DSN=mydb;UID=root;PWD=password', driver="pyodbc")  
+    db = pydbclib.connect('DSN=mysqldb;UID=user;PWD=password', driver="pyodbc")  
+    # 通过已有驱动连接方式连接
+    import pymysql
+    con = pymysql.connect(user="user", password="password", database="test")
+    db = pydbclib.connect(driver=con)
 
 Sqlalchemy Driver
 
     # 连接oracle
-    db = connection("oracle://jwdn:password@local:1521/xe")
+    db = pydbclib.connection("oracle://user:password@local:1521/xe")
     # 连接mysql
-    db = connection("mysql+pyodbc://:@mysqldb")
+    db = pydbclib.connection("mysql+pyodbc://:@mysqldb")
+    # 通过已有engine连接
+    from sqlalchemy import create_engine
+    engine = create_engine("mysql+pymysql://user:password@localhost:3306/test")
+    db = pydbclib.connection(driver=engine)
