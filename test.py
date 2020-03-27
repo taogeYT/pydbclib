@@ -4,6 +4,7 @@
 @desc:
 """
 import unittest
+from collections import Iterator
 
 import pydbclib
 
@@ -16,14 +17,20 @@ class TestDataBase(unittest.TestCase):
         record = {"a": 1, "b": "1"}
         db.get_table("foo").insert_one(record)
         self.assertEqual(db.get_table("foo").find_one({"a": 1}), record)
-        self.assertEqual(list(db.get_table("foo").find({"a": 1})), [record])
+        r = db.get_table("foo").find({"a": 1})
+        self.assertIsInstance(r, Iterator)
+        self.assertEqual(list(r), [record])
         record.update(a=2)
         self.assertEqual(db.get_table("foo").insert_many([record for i in range(10)]), 10)
         self.assertEqual(db.get_table("foo").update({"a": 2}, {"b": "2"}), 10)
         record.update(b="2")
-        self.assertEqual(list(db.get_table("foo").find({"a": 2})), [record for _ in range(10)])
+        r = db.get_table("foo").find({"a": 2})
+        self.assertIsInstance(r, Iterator)
+        self.assertEqual(list(r), [record for _ in range(10)])
         self.assertEqual(db.get_table("foo").delete({"a": 2}), 10)
-        self.assertEqual(list(db.get_table("foo").find({"a": 2})), [])
+        r = db.get_table("foo").find({"a": 2})
+        self.assertIsInstance(r, Iterator)
+        self.assertEqual(list(r), [])
         self.assertEqual(db.get_table("foo").find_one({"a": 2}), {})
         db.execute('DROP TABLE foo')
 
