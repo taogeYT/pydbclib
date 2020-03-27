@@ -11,7 +11,7 @@ with open('pydbclib/__init__.py', 'rb') as f:
 setup(
     name='pydbclib',
     version=version,
-    install_requires=['sqlalchemy>=1.1.14'],
+    install_requires=['sqlalchemy>=1.1.14', 'sqlparse'],
     description='Python Database Connectivity Lib',
     classifiers=[
         "License :: OSI Approved :: MIT License",
@@ -25,7 +25,7 @@ setup(
         "Programming Language :: Python",
     ],
     author='yatao',
-    url='https://github.com/taogeYT/py_db',
+    url='https://github.com/taogeYT/pydbclib',
     author_email='li_yatao@outlook.com',
     license='MIT',
     packages=find_packages(),
