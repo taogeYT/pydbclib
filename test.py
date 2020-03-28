@@ -4,7 +4,7 @@
 @desc:
 """
 import unittest
-from collections import Iterator
+from collections.abc import Iterator
 
 import pydbclib
 
@@ -12,7 +12,6 @@ import pydbclib
 class TestDataBase(unittest.TestCase):
 
     def action(self, db):
-        print()
         db.execute('CREATE TABLE foo (a integer, b varchar(20))')
         record = {"a": 1, "b": "1"}
         db.get_table("foo").insert_one(record)
@@ -49,3 +48,7 @@ class TestDataBase(unittest.TestCase):
     def test_pymysql(self):
         with pydbclib.connect(driver="pymysql", database="test", user="test", password="test") as db:
             self.action(db)
+
+
+if __name__ == '__main__':
+    unittest.main()

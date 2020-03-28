@@ -37,8 +37,6 @@ pydbclib is a database utils for python
         db.get_table("foo").update({"a": 1}, {"b": "first"})
         # 将a=1那条记录删除
         db.get_table("foo").delete({"a": 1})
-        
-        db.execute('DROP TABLE foo')
 
 
 #### 常用数据库连接  

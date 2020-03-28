@@ -6,6 +6,8 @@
 import sys
 from abc import ABC, abstractmethod
 
+from log4py import Logger
+
 from pydbclib.sql import default_place_holders, compilers
 
 
@@ -59,6 +61,7 @@ class Driver(ABC):
             self.connection.close()
 
 
+@Logger.class_logger()
 class CommonDriver(Driver):
 
     def __init__(self, *args, **kwargs):
@@ -88,16 +91,17 @@ class CommonDriver(Driver):
     def execute(self, sql, params=None, **kw):
         sql, params = self.compiler(sql, params).process_one()
         params = params if params else []
-        # print(sql, params)
+        self.logger.info("{}, {}".format(sql, params))
         self.session.execute(sql, params, **kw)
 
     def execute_many(self, sql, params=None, **kw):
         sql, params = self.compiler(sql, params).process()
         params = params if params else []
-        # print(sql, params)
+        self.logger.info("{}, {}".format(sql, params))
         self.session.executemany(sql, params, **kw)
 
 
+@Logger.class_logger()
 class SQLAlchemyDriver(Driver):
 
     def __init__(self, *args, **kwargs):
@@ -120,11 +124,11 @@ class SQLAlchemyDriver(Driver):
         return self._session
 
     def execute(self, sql, params=None, **kw):
-        # print(sql, params)
+        self.logger.info("{}, {}".format(sql, params))
         self._cursor = self.session.execute(sql, params, **kw)
 
     def execute_many(self, sql, params=None, **kw):
-        # print(sql, params)
+        self.logger.info("{}, {}".format(sql, params))
         self._cursor = self.session.execute(sql, params, **kw)
 
     def fetchone(self):

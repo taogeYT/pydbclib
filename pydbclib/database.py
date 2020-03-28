@@ -59,12 +59,16 @@ class BaseDatabase(ABC):
 
 class Database(BaseDatabase):
     """
-    数据库操作适配器
+    数据库操作封装
     """
 
     def execute(self, sql, args=None):
+        """
+        原生数据库驱动操作方法
+        :param sql: sql语句
+        :param args: sql语句参数
+        """
         self.driver.execute(sql, args)
-        self.driver.commit()
 
     def _readall(self, to_dict, batch_size):
         records = self.driver.fetchmany(batch_size)
@@ -77,6 +81,14 @@ class Database(BaseDatabase):
             records = self.driver.fetchmany(batch_size)
 
     def read(self, sql, args=None, to_dict=True, batch_size=5000):
+        """
+        查询返回所有表记录
+        :param sql: sql语句
+        :param args: sql语句参数
+        :param to_dict: 返回记录是否转换成字典形式（True: [{"a": 1, "b": "one"}]， False: [(1, "one)]），默认为True
+        :param batch_size: 每次查询返回的缓存的数量，大数据量可以适当提高大小
+        :return: 生成器对象
+        """
         self.driver.execute(sql, args)
         # records = self.driver.fetchall()
         # if to_dict:
@@ -86,6 +98,13 @@ class Database(BaseDatabase):
         return self._readall(to_dict, batch_size)
 
     def read_one(self, sql, args=None, to_dict=True):
+        """
+        查询返回一条表记录
+        :param sql: sql语句
+        :param args: sql语句参数
+        :param to_dict: 返回记录是否转换成字典形式（True: [{"a": 1, "b": "one"}]， False: [(1, "one)]），默认为True
+        :return: to_dict=True {"a": 1, "b": "one"}, to_dict=False (1, "one")
+        """
         self.driver.execute(sql, args)
         record = self.driver.fetchone()
         if to_dict:
@@ -98,11 +117,23 @@ class Database(BaseDatabase):
             return record
 
     def write(self, sql, args=None):
+        """
+        插入数据库记录
+        :param sql: sql语句
+        :param args: sql语句参数
+        :return: 影响行数
+        """
         self.driver.execute(sql, args)
         rowcount = self.driver.rowcount()
         return rowcount
 
     def write_many(self, sql, args=None):
+        """
+        批量插入数据库记录
+        :param sql: sql语句
+        :param args: sql语句参数
+        :return: 影响行数
+        """
         self.driver.execute_many(sql, args)
         rowcount = self.driver.rowcount()
         return rowcount
@@ -140,20 +171,41 @@ class Table(object):
         self.db = db
 
     def update(self, condition, update):
+        """
+        表更新操作
+        :param condition: 更新条件，字典类型或者sql条件表达式
+        :param update: 要更新的字段，字典类型
+        :return: 返回影响行数
+        """
         condition, p1 = format_condition(condition)
         update, p2 = format_update(update)
         p1.update(p2)
         return self.db.write(f"update {self.name} set {update}{condition}", p1)
 
     def delete(self, condition):
+        """
+        删除表中记录
+        :param condition: 删除条件，字典类型或者sql条件表达式
+        :return: 返回影响行数
+        """
         condition, param = format_condition(condition)
         return self.db.write(f"delete from {self.name}{condition}", param)
 
     def find_one(self, condition=None):
+        """
+        按条件查询一条表记录
+        :param condition: 查询条件，字典类型或者sql条件表达式
+        :return: 字典类型，如 {"a": 1, "b": "one"}
+        """
         condition, param = format_condition(condition)
         return self.db.read_one(f"select * from {self.name}{condition}", param)
 
     def find(self, condition=None):
+        """
+        按条件查询所有符合条件的表记录
+        :param condition: 查询条件，字典类型或者sql条件表达式
+        :return: 生成器类型
+        """
         condition, param = format_condition(condition)
         return self.db.read(f"select * from {self.name}{condition}", param)
 
@@ -162,6 +214,10 @@ class Table(object):
                f" values ({','.join([':%s' % i for i in columns])})"
 
     def insert_one(self, record):
+        """
+        表中插入一条记录
+        :param record: 要插入的记录数据，字典类型
+        """
         if isinstance(record, dict):
             columns = record.keys()
             return self.db.write(self._get_insert_sql(columns), record)
@@ -169,6 +225,10 @@ class Table(object):
             raise ParameterError("无效的参数")
 
     def insert_many(self, records):
+        """
+        表中插入多条记录
+        :param records: 要插入的记录数据，字典集合
+        """
         if not isinstance(records, (tuple, list)):
             raise ParameterError("records param must iterable")
         sample = records[0]
