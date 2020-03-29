@@ -74,7 +74,7 @@ class CommonDriver(Driver):
 
     def connect(self, *args, **kwargs):
         if hasattr(self.driver, "cursor"):
-            self._dbapi = self.driver.__module__
+            self._dbapi = self.driver.__class__.__module__
             return self.driver
         else:
             __import__(self.driver)
