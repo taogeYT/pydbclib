@@ -19,38 +19,41 @@ with pydbclib.connect("sqlite:///:memory:") as db:
 
 ## 接口使用演示
 
-```python
-import pydbclib
-db = pydbclib.connect("sqlite:///:memory:")
-# # 数据库基础操作 # #
+```bash
+>>> import pydbclib
+>>> db = pydbclib.connect("sqlite:///:memory:")
+>>> record = {"a": 1, "b": "one"}
+>>> db.execute('create table foo(a integer, b varchar(20))')
 # 单个插入和批量插入，结果返回影响行数
-record = {"a": 1, "b": "one"}
-db.write("insert into foo(a,b) values(:a,:b)", record)
-db.write_many("insert into foo(a,b) values(:a,:b)", [record]*10)
-# 查询操作，返回生成器字典集合
-db.read("select * from foo")
-# 参数to_dict=false，返回生成器元祖集合
-db.read("select * from foo", to_dict=False)
-# 查询结果只返回一条记录：{"a": 1, "b": "one"}
-db.read_one("select * from foo")
+>>> db.write("insert into foo(a,b) values(:a,:b)", record)
+1
+>>> db.write_many("insert into foo(a,b) values(:a,:b)", [record]*10)
+10
+>>> db.read_one(sql)
+{'a': 1, 'b': 'one'}
+>>> db.read_one(sql, to_dict=False)
+(1, 'one')
+>>> db.read(sql)
+<generator object Database._readall at 0x111288650>
 
-# # 应对表的快捷操作 # #
 # 插入单条和插入多条，输入参数字典的键值必须和表中字段同名
-db.get_table("foo").insert_one({"a": 1, "b": "one"})
-db.get_table("foo").insert_many([{"a": 1, "b": "one"}])
-# 查询字段a=1所有记录
-db.get_table("foo").find({"a": 1})
-# 也可以直接写成sql条件表达式，下面几个函数的条件部分都可以写成sql条件表达式
-db.get_table("foo").find("a=1")
-# 查询字段a=1第一条记录
-db.get_table("foo").find_one({"a": 1})
-# 将a=1那条记录的b字段值更新为"first"
-db.get_table("foo").update({"a": 1}, {"b": "first"})
-# 将a=1那条记录删除
-db.get_table("foo").delete({"a": 1})
+>>> db.get_table("foo").insert_one({"a": 1, "b": "one"})
+1
+>>> db.get_table("foo").insert_many([{"a": 1, "b": "one"}]*10)
+10
+>>> db.get_table("foo").find_one({"a": 1})
+{'a': 1, 'b': 'one'}
+>>> db.get_table("foo").update({"a": 1}, {"b": "first"})
+11
+>>> db.get_table("foo").find_one({"a": 1})
+{'a': 1, 'b': 'first'}
+>>> db.get_table("foo").delete({"a": 1})
+11
+>>> db.get_table("foo").find_one({"a": 1})
+{}
 
-db.commit()
-db.close()
+>>> db.commit()
+>>> db.close()
 ```
 
 #### 常用数据库连接  
