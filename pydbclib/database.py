@@ -6,6 +6,7 @@
 from abc import ABC, abstractmethod
 
 from pydbclib.exceptions import ParameterError
+from pydbclib.record import RecordCollection
 
 
 class BaseDatabase(ABC):
@@ -95,7 +96,7 @@ class Database(BaseDatabase):
         #     columns = [i[0].lower() for i in self.driver.description()]
         #     records = [dict(zip(columns, i)) for i in records]
         # return records
-        return self._readall(to_dict, batch_size)
+        return RecordCollection(self._readall(to_dict, batch_size))
 
     def read_one(self, sql, args=None, to_dict=True):
         """
