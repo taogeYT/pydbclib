@@ -19,9 +19,10 @@ def to_camel_style(text):
 
 
 def get_suffix(text):
-    _, r = os.path.splitext(text)
-    return r[1:]
+    left, right = os.path.splitext(text)
+    return right[1:] if right else left
 
 
 if __name__ == '__main__':
     print(to_camel_style("hello_world"))
+    print(get_suffix('ab'))

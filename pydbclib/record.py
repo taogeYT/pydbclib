@@ -24,6 +24,17 @@ class RecordCollection(object):
         self._rows = (function(r) for r in self._rows)
         return self
 
+    def rename(self, mapper):
+        """
+        字段重命名
+        """
+        def function(record):
+            if isinstance(record, dict):
+                return {mapper.get(k, k): v for k, v in record.items()}
+            else:
+                return dict(zip(mapper, record))
+        return self.map(function)
+
     __next__ = next
 
     def limit(self, num):
@@ -31,5 +42,4 @@ class RecordCollection(object):
 
 
 if __name__ == '__main__':
-    r = RecordCollection((i for i in range(1000)))
-    print([i for i in r])
+    RecordCollection((i for i in range(10)))

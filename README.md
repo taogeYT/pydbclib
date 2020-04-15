@@ -10,8 +10,8 @@ pip install 'pydbclib>=2.0'
 ## A Simple Example:
 
 ```python
-import pydbclib
-with pydbclib.connect("sqlite:///:memory:") as db:
+from pydbclib import connect
+with connect("sqlite:///:memory:") as db:
     db.execute('create table foo(a integer, b varchar(20))')
     db.get_table("foo").insert_one({"a": 1, "b": "one"})
     print(db.get_table("foo").find_one({"a": 1}))
@@ -20,8 +20,8 @@ with pydbclib.connect("sqlite:///:memory:") as db:
 ## 接口使用演示
 
 ```bash
->>> import pydbclib
->>> db = pydbclib.connect("sqlite:///:memory:")
+>>> from pydbclib import connect
+>>> db = connect("sqlite:///:memory:")
 >>> record = {"a": 1, "b": "one"}
 >>> db.execute('create table foo(a integer, b varchar(20))')
 # 单个插入和批量插入，结果返回影响行数
@@ -33,8 +33,8 @@ with pydbclib.connect("sqlite:///:memory:") as db:
 {'a': 1, 'b': 'one'}
 >>> db.read_one(sql, to_dict=False)
 (1, 'one')
->>> db.read(sql)
-<generator object Database._readall at 0x111288650>
+>>> db.read(sql).limit(2)
+[{'a': 1, 'b': 'one'}, {'a': 1, 'b': 'one'}]
 
 # 插入单条和插入多条，输入参数字典的键值必须和表中字段同名
 >>> db.get_table("foo").insert_one({"a": 1, "b": "one"})
@@ -74,13 +74,13 @@ Common Driver
 Sqlalchemy Driver
 
     # 连接oracle
-    db = pydbclib.connection("oracle://user:password@local:1521/xe")
+    db = pydbclib.connect("oracle://user:password@local:1521/xe")
     # 连接mysql
-    db = pydbclib.connection("mysql+pyodbc://:@mysqldb")
+    db = pydbclib.connect("mysql+pyodbc://:@mysqldb")
     # 通过已有engine连接
     from sqlalchemy import create_engine
     engine = create_engine("mysql+pymysql://user:password@localhost:3306/test")
-    db = pydbclib.connection(driver=engine)
+    db = pydbclib.connect(driver=engine)
 
 
 
