@@ -6,7 +6,7 @@ from pydbclib.database import Database
 from pydbclib.drivers import CommonDriver, SQLAlchemyDriver
 
 __author__ = "lyt"
-__version__ = '2.1'
+__version__ = '2.1.1'
 
 
 def connect(*args, **kwargs):

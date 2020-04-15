@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from log4py import Logger
 
 from pydbclib.sql import default_place_holders, compilers
+from pydbclib.utils import get_suffix
 
 
 class Driver(ABC):
@@ -46,6 +47,11 @@ class Driver(ABC):
         return self.session.rowcount
 
     def description(self):
+        # 去除hive表名前缀
+        # {'pokes.foo': 238, 'pokes.bar': 'val_238'} => {'foo': 238, 'bar': 'val_238'}
+        return [(get_suffix(r[0]), *r[1:])for r in self._description()]
+
+    def _description(self):
         return self.session.description
 
     def rollback(self):
@@ -143,7 +149,7 @@ class SQLAlchemyDriver(Driver):
     def rowcount(self):
         return self._cursor.rowcount
 
-    def description(self):
+    def _description(self):
         return self._cursor._cursor_description()
 
     def rollback(self):

@@ -20,6 +20,10 @@ class RecordCollection(object):
         except StopIteration:
             raise StopIteration('RecordCollection no more data')
 
+    def map(self, function):
+        self._rows = (function(r) for r in self._rows)
+        return self
+
     __next__ = next
 
     def limit(self, num):
