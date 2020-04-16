@@ -5,7 +5,7 @@
 from pydbclib.database import Database
 from pydbclib.drivers import CommonDriver, SQLAlchemyDriver
 
-__author__ = "lyt"
+__author__ = "liyatao"
 __version__ = '2.1'
 
 

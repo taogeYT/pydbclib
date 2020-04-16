@@ -8,8 +8,9 @@ import itertools
 
 class RecordCollection(object):
 
-    def __init__(self, rows):
+    def __init__(self, rows, columns=None):
         self._rows = rows
+        self.columns = columns
 
     def __iter__(self):
         return self
@@ -19,6 +20,8 @@ class RecordCollection(object):
             return next(self._rows)
         except StopIteration:
             raise StopIteration('RecordCollection no more data')
+
+    __next__ = next
 
     def map(self, function):
         self._rows = (function(r) for r in self._rows)
@@ -35,10 +38,15 @@ class RecordCollection(object):
                 return dict(zip(mapper, record))
         return self.map(function)
 
-    __next__ = next
-
     def limit(self, num):
         return [i for i in itertools.islice(self._rows, num)]
+
+    def to_df(self):
+        import pandas
+        if self.columns:
+            return pandas.DataFrame(self, columns=self.columns)
+        else:
+            return pandas.DataFrame(self)
 
 
 if __name__ == '__main__':
