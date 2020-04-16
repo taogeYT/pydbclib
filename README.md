@@ -23,7 +23,6 @@ with connect("sqlite:///:memory:") as db:
 >>> from pydbclib import connect
 >>> db = connect("sqlite:///:memory:")
 >>> db.execute('create table foo(a integer, b varchar(20))')
-# 单个插入和批量插入，结果返回影响行数
 >>> db.write("insert into foo(a,b) values(:a,:b)", [{"a": 1, "b": "one"}]*4)
 4
 >>> db.read_one("select * from foo")
@@ -37,7 +36,7 @@ with connect("sqlite:///:memory:") as db:
 2  1  one
 3  1  one
 
-# 插入单条和插入多条，输入参数字典的键值必须和表中字段同名
+# 表的操作封装
 >>> db.get_table("foo").insert({"a": 1, "b": "one"})
 1
 >>> db.get_table("foo").find_one({"a": 1})
