@@ -16,12 +16,20 @@ class RecordCollection(object):
         return self
 
     def next(self):
-        try:
-            return next(self._rows)
-        except StopIteration:
-            raise StopIteration('RecordCollection no more data')
+        # try:
+        #     return next(self._rows)
+        # except StopIteration:
+        #     raise StopIteration('RecordCollection no more data')
+        return next(self._rows)
 
     __next__ = next
+
+    def first(self):
+        try:
+            record = self.next()
+        except StopIteration:
+            record = None
+        return record
 
     def map(self, function):
         self._rows = (function(r) for r in self._rows)

@@ -108,7 +108,7 @@ class Database(BaseDatabase):
         record = self.driver.fetchone()
         if to_dict:
             if record is None:
-                return {}
+                return None
             else:
                 columns = self.get_columns()
                 return dict(zip(columns, record))
