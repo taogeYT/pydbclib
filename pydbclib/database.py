@@ -32,10 +32,6 @@ class BaseDatabase(ABC):
     def write(self, sql, args=None):
         pass
 
-    @abstractmethod
-    def write_many(self, sql, args=None):
-        pass
-
     def commit(self):
         self.driver.commit()
 
@@ -71,15 +67,18 @@ class Database(BaseDatabase):
         """
         self.driver.execute(sql, args)
 
-    def _readall(self, to_dict, batch_size):
+    def _readall(self, batch_size, columns=None):
         records = self.driver.fetchmany(batch_size)
         while records:
-            if to_dict:
-                columns = [i[0].lower() for i in self.driver.description()]
+            if columns:
+                # columns = [i[0].lower() for i in self.driver.description()]
                 records = [dict(zip(columns, i)) for i in records]
             for record in records:
                 yield record
             records = self.driver.fetchmany(batch_size)
+
+    def get_columns(self):
+        return [i[0].lower() for i in self.driver.description()]
 
     def read(self, sql, args=None, to_dict=True, batch_size=5000):
         """
@@ -91,12 +90,11 @@ class Database(BaseDatabase):
         :return: 生成器对象
         """
         self.driver.execute(sql, args)
-        # records = self.driver.fetchall()
-        # if to_dict:
-        #     columns = [i[0].lower() for i in self.driver.description()]
-        #     records = [dict(zip(columns, i)) for i in records]
-        # return records
-        return RecordCollection(self._readall(to_dict, batch_size))
+        columns = self.get_columns()
+        if to_dict:
+            return RecordCollection(self._readall(batch_size, columns))
+        else:
+            return RecordCollection(self._readall(batch_size), columns)
 
     def read_one(self, sql, args=None, to_dict=True):
         """
@@ -112,32 +110,44 @@ class Database(BaseDatabase):
             if record is None:
                 return {}
             else:
-                columns = [i[0].lower() for i in self.driver.description()]
+                columns = self.get_columns()
                 return dict(zip(columns, record))
         else:
             return record
 
     def write(self, sql, args=None):
         """
-        插入数据库记录
+        数据库写入操作：
         :param sql: sql语句
         :param args: sql语句参数
         :return: 影响行数
-        """
-        self.driver.execute(sql, args)
-        rowcount = self.driver.rowcount()
-        return rowcount
 
-    def write_many(self, sql, args=None):
+        Example:
+            rowcount = db.write(
+                "insert into foo(a,b) values(:a,:b)",
+                {"a": 1, "b": "one"}
+            )
+
+            批量写入
+            rowcount = db.write(
+                "insert into foo(a,b) values(:a,:b)",
+                [
+                    {"a": 1, "b": "one"},
+                    {"a": 2, "b": "two"}
+                ]
+            )
         """
-        批量插入数据库记录
-        :param sql: sql语句
-        :param args: sql语句参数
-        :return: 影响行数
-        """
-        self.driver.execute_many(sql, args)
-        rowcount = self.driver.rowcount()
-        return rowcount
+        from collections.abc import Iterable
+        if args is None or isinstance(args, dict):
+            self.driver.execute(sql, args)
+            rowcount = self.driver.rowcount()
+            return rowcount
+        elif isinstance(args, Iterable):
+            self.driver.execute_many(sql, args)
+            rowcount = self.driver.rowcount()
+            return rowcount
+        else:
+            raise ParameterError("'params'参数类型无效")
 
 
 def format_condition(condition):
@@ -214,6 +224,16 @@ class Table(object):
         return f"insert into {self.name} ({','.join(columns)})" \
                f" values ({','.join([':%s' % i for i in columns])})"
 
+    def insert(self, records):
+        """
+        表中插入记录
+        :param records: 要插入的记录数据，字典or字典列表
+        """
+        if isinstance(records, dict):
+            return self.insert_one(records)
+        else:
+            return self.insert_many(records)
+
     def insert_one(self, record):
         """
         表中插入一条记录
@@ -235,7 +255,7 @@ class Table(object):
         sample = records[0]
         if isinstance(sample, dict):
             columns = sample.keys()
-            return self.db.write_many(self._get_insert_sql(columns), records)
+            return self.db.write(self._get_insert_sql(columns), records)
         else:
             raise ParameterError("无效的参数")
 

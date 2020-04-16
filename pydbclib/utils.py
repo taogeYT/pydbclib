@@ -23,6 +23,20 @@ def get_suffix(text):
     return right[1:] if right else left
 
 
+def demo_connect():
+    from . import connect
+    db = connect("sqlite:///:memory:")
+    db.execute('create table foo(a integer, b varchar(20))')
+    record = {"a": 1, "b": "one"}
+    db.write("INSERT INTO foo(a,b) values(:a,:b)", [record] * 10)
+    return db
+
+
+def hive_connect(host="localhost", port=10000, db="default"):
+    from . import connect
+    return connect(f'hive://{host}:{port}/{db}')
+
+
 if __name__ == '__main__':
     print(to_camel_style("hello_world"))
     print(get_suffix('ab'))
