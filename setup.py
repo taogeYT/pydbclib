@@ -24,7 +24,7 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",  
         "Programming Language :: Python",
     ],
-    author='yatao',
+    author='liyatao',
     url='https://github.com/taogeYT/pydbclib',
     author_email='li_yatao@outlook.com',
     license='MIT',
