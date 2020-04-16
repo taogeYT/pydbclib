@@ -4,55 +4,117 @@
 @desc:
 """
 import unittest
+import sqlite3
 from collections.abc import Iterator
 
-import pydbclib
+from sqlalchemy import create_engine
+
+from pydbclib import connect
+
+
+class TestConnect(unittest.TestCase):
+
+    def test_Common_driver(self):
+        with connect(":memory:", driver="sqlite3") as db:
+            db.execute("select 1")
+        con = sqlite3.connect(":memory:")
+        with connect(driver=con) as db:
+            db.execute("select 1")
+
+    def test_sqlalchemy_driver(self):
+        with connect("sqlite:///:memory:") as db:
+            db.execute("select 1")
+        engine = create_engine("sqlite:///:memory:")
+        with connect(driver=engine) as db:
+            db.execute("select 1")
 
 
 class TestDataBase(unittest.TestCase):
+    db = None
+    record = {"a": 1, "b": "1"}
 
-    def execute(self, db):
-        db.execute('CREATE TABLE foo (a integer, b varchar(20))')
-        try:
-            self.action(db)
-        finally:
-            db.execute('DROP TABLE foo')
+    @classmethod
+    def setUpClass(cls):
+        cls.db = connect("sqlite:///:memory:")
 
-    def action(self, db):
-        record = {"a": 1, "b": "1"}
-        db.get_table("foo").insert_one(record)
-        self.assertEqual(db.get_table("foo").find_one({"a": 1}), record)
-        r = db.get_table("foo").find({"a": 1})
-        self.assertEqual(r.limit(1), [record])
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.db.close()
+
+    def setUp(self):
+        self.db.execute("CREATE TABLE foo (a integer, b varchar(20))")
+
+    def tearDown(self):
+        self.db.rollback()
+        self.db.execute('DROP TABLE foo')
+
+    def test_write(self):
+        r = self.db.write("insert into foo(a,b) values(:a,:b)", [self.record]*10)
+        self.assertEqual(r, 10)
+
+    def test_read(self):
+        r = self.db.read("select * from foo")
+        self.assertEqual(r.limit(1), [])
         self.assertIsInstance(r, Iterator)
-        record.update(a=2)
-        self.assertEqual(db.get_table("foo").insert([record for i in range(10)]), 10)
-        self.assertEqual(db.get_table("foo").update({"a": 2}, {"b": "2"}), 10)
-        record.update(b="2")
-        r = db.get_table("foo").find({"a": 2})
-        self.assertEqual(r.limit(5), [record for _ in range(5)])
+        self.db.get_table("foo").insert([self.record]*10)
+        r = self.db.read("select * from foo").map(lambda x: {**x, "c": 3})
+        self.assertEqual(r.limit(1), [{**self.record, "c": 3}])
+
+    def test_read_one(self):
+        self.db.get_table("foo").insert([self.record] * 10)
+        r = self.db.read_one("select * from foo")
+        self.assertEqual(r, self.record)
+
+
+class TestTable(unittest.TestCase):
+    db = None
+    table = None
+    record = {"a": 1, "b": "1"}
+
+    @classmethod
+    def setUpClass(cls):
+        cls.db = connect(":memory:", driver="sqlite3")
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.db.close()
+
+    def setUp(self):
+        self.db.execute("CREATE TABLE foo (a integer, b varchar(20))")
+        self.table = self.db.get_table("foo")
+
+    def tearDown(self):
+        self.db.rollback()
+        self.db.execute('DROP TABLE foo')
+
+    def test_insert(self):
+        self.assertEqual(self.table.insert(self.record), 1)
+        self.assertEqual(self.table.insert([self.record]*10), 10)
+
+    def test_find(self):
+        self.assertEqual(self.table.find().first(), None)
+        self.table.insert(self.record)
+        r = self.table.find({"a": 1}).map(lambda x: {**x, "c": 3})
+        self.assertEqual(r.first(), {**self.record, "c": 3})
         self.assertIsInstance(r, Iterator)
-        self.assertEqual(db.get_table("foo").delete({"a": 2}), 10)
-        r = db.get_table("foo").find({"a": 2})
-        self.assertIsInstance(r, Iterator)
-        self.assertEqual(list(r), [])
-        self.assertEqual(db.get_table("foo").find_one({"a": 2}), {})
+        self.assertEqual(self.table.find({"a": 2}).limit(1), [])
 
-    def test_sqlalchemy_sqlite_memory(self):
-        with pydbclib.connect("sqlite:///:memory:") as db:
-            self.execute(db)
+    def test_find_one(self):
+        self.assertEqual(self.table.find_one(), None)
+        self.table.insert(self.record)
+        self.assertEqual(self.table.find_one(), self.record)
 
-    def test_sqlite(self):
-        with pydbclib.connect(":memory:", driver="sqlite3") as db:
-            self.execute(db)
+    def test_update(self):
+        self.table.insert([self.record]*10)
+        self.assertEqual(self.table.update({"a": 1}, {"b": "2"}), 10)
+        self.assertEqual(self.table.find({"a": 1}).limit(10), [{"a": 1, "b": "2"}]*10)
 
-    def test_mysql(self):
-        with pydbclib.connect("mysql+pymysql://test:test@localhost:3306/test") as db:
-            self.execute(db)
+    def test_delete(self):
+        self.table.insert([self.record] * 10)
+        self.assertEqual(self.table.delete({"a": 1}), 10)
 
-    def test_pymysql(self):
-        with pydbclib.connect(driver="pymysql", database="test", user="test", password="test") as db:
-            self.execute(db)
+    def test_to_df(self):
+        self.assertTrue(self.table.find({"a": 1}).to_df().empty)
 
 
 if __name__ == '__main__':
