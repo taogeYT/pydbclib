@@ -54,11 +54,11 @@ class TestDataBase(unittest.TestCase):
 
     def test_read(self):
         r = self.db.read("select * from foo")
-        self.assertEqual(r.limit(1), [])
+        self.assertEqual(r.get(1), [])
         self.assertIsInstance(r, Iterator)
         self.db.get_table("foo").insert([self.record]*10)
         r = self.db.read("select * from foo").map(lambda x: {**x, "c": 3})
-        self.assertEqual(r.limit(1), [{**self.record, "c": 3}])
+        self.assertEqual(r.get(1), [{**self.record, "c": 3}])
 
     def test_read_one(self):
         self.db.get_table("foo").insert([self.record] * 10)
@@ -97,7 +97,7 @@ class TestTable(unittest.TestCase):
         r = self.table.find({"a": 1}).map(lambda x: {**x, "c": 3})
         self.assertEqual(r.first(), {**self.record, "c": 3})
         self.assertIsInstance(r, Iterator)
-        self.assertEqual(self.table.find({"a": 2}).limit(1), [])
+        self.assertEqual(self.table.find({"a": 2}).get(1), [])
 
     def test_find_one(self):
         self.assertEqual(self.table.find_one(), None)
@@ -107,7 +107,7 @@ class TestTable(unittest.TestCase):
     def test_update(self):
         self.table.insert([self.record]*10)
         self.assertEqual(self.table.update({"a": 1}, {"b": "2"}), 10)
-        self.assertEqual(self.table.find({"a": 1}).limit(10), [{"a": 1, "b": "2"}]*10)
+        self.assertEqual(self.table.find({"a": 1}).get(10), [{"a": 1, "b": "2"}]*10)
 
     def test_delete(self):
         self.table.insert([self.record] * 10)
@@ -115,6 +115,10 @@ class TestTable(unittest.TestCase):
 
     def test_to_df(self):
         self.assertTrue(self.table.find({"a": 1}).to_df().empty)
+        self.table.insert([self.record]*10)
+        df = self.table.find({"a": 1}).limit(1).to_df()
+        self.assertEqual(df.loc[0, 'a'], self.record['a'])
+        self.assertEqual(df.loc[0, 'b'], self.record['b'])
 
 
 if __name__ == '__main__':
