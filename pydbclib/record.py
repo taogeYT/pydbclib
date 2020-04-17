@@ -22,13 +22,6 @@ class Records(object):
 
     __next__ = next
 
-    def first(self):
-        try:
-            record = self.next()
-        except StopIteration:
-            record = None
-        return record
-
     def map(self, function):
         self._rows = (function(r) for r in self._rows)
         return self
@@ -48,8 +41,15 @@ class Records(object):
         self._rows = (r for i, r in enumerate(self._rows) if i < num)
         return self
 
+    def get_one(self):
+        r = self.get(1)
+        return r[0] if len(r)>0 else None
+
     def get(self, num):
         return [i for i in itertools.islice(self._rows, num)]
+
+    def get_all(self):
+        return [r for r in self._rows]
 
     def to_df(self):
         import pandas

@@ -92,10 +92,10 @@ class TestTable(unittest.TestCase):
         self.assertEqual(self.table.insert([self.record]*10), 10)
 
     def test_find(self):
-        self.assertEqual(self.table.find().first(), None)
+        self.assertEqual(self.table.find().get_one(), None)
         self.table.insert(self.record)
         r = self.table.find({"a": 1}).map(lambda x: {**x, "c": 3})
-        self.assertEqual(r.first(), {**self.record, "c": 3})
+        self.assertEqual(r.get_one(), {**self.record, "c": 3})
         self.assertIsInstance(r, Iterator)
         self.assertEqual(self.table.find({"a": 2}).get(1), [])
 
