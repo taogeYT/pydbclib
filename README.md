@@ -14,13 +14,13 @@ from pydbclib import connect
 with connect("sqlite:///:memory:") as db:
     db.execute('create table foo(a integer, b varchar(20))')
     # 统一使用’:[name]'形式的SQL的占位符
-    db.execute("insert into foo(a,b) values(:a,:b)", [{"a": 1, "b": "one"}, {"a": 2, "b": "two"}]*2)
+    db.execute("insert into foo(a,b) values(:a,:b)", [{"a": 1, "b": "one"}]*4)
     print(db.read("select * from foo").get_one())
     print(db.read("select * from foo").get(2))
     print(db.read("select * from foo").get_all())
     print(db.read("select * from foo").limit(2).to_df())
-    db.get_table("foo").insert({"a": 3, "b": "three"})
-    print(db.get_table("foo").find_one({"a": 3}))
+    db.get_table("foo").insert({"a": 2, "b": "two"})
+    print(db.get_table("foo").find_one({"a": 2}))
     print(db.get_table("foo").find().get(2))
     print(db.get_table("foo").find({"a": 1}).get_all())
     print(db.get_table("foo").find().limit(2).to_df())
