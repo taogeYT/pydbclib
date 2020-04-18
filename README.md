@@ -21,8 +21,8 @@ with connect("sqlite:///:memory:") as db:
     print(db.read("select * from foo").limit(2).to_df())
     db.get_table("foo").insert({"a": 2, "b": "two"})
     print(db.get_table("foo").find_one({"a": 2}))
-    print(db.get_table("foo").find().get(2))
-    print(db.get_table("foo").find({"a": 1}).get_all())
+    print(db.get_table("foo").find({"a": 1}).get(2))
+    print(db.get_table("foo").find().get_all())
     print(db.get_table("foo").find().limit(2).to_df())
 ```
 
