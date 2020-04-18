@@ -8,10 +8,10 @@ import itertools
 
 class Records(object):
 
-    def __init__(self, rows, columns, to_dict=True):
+    def __init__(self, rows, columns, as_dict):
         self._rows = rows
         self.columns = columns
-        self.to_dict = to_dict
+        self.to_dict = as_dict
         self._limit_num = None
 
     def __iter__(self):

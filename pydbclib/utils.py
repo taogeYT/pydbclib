@@ -28,7 +28,7 @@ def demo_connect():
     db = connect("sqlite:///:memory:")
     db.execute('create table foo(a integer, b varchar(20))')
     record = {"a": 1, "b": "one"}
-    db.write("INSERT INTO foo(a,b) values(:a,:b)", [record] * 10)
+    db.execute("INSERT INTO foo(a,b) values(:a,:b)", [record] * 10)
     return db
 
 

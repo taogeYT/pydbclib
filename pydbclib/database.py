@@ -4,6 +4,8 @@
 @desc:
 """
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
+from contextlib import contextmanager
 
 from pydbclib.exceptions import ParameterError
 from pydbclib.record import Records
@@ -26,10 +28,6 @@ class BaseDatabase(ABC):
 
     @abstractmethod
     def read_one(self, sql, args=None, to_dict=True):
-        pass
-
-    @abstractmethod
-    def write(self, sql, args=None):
         pass
 
     def commit(self):
@@ -59,15 +57,45 @@ class Database(BaseDatabase):
     数据库操作封装
     """
 
-    def execute(self, sql, args=None):
+    def execute(self, sql, args=None, autocommit=False):
         """
-        原生数据库驱动操作方法
+        执行sql语句：
         :param sql: sql语句
         :param args: sql语句参数
-        """
-        self.driver.execute(sql, args)
+        :param autocommit: 执行完sql是否自动提交
+        :return: 影响行数
 
-    def _readall(self, batch_size, columns=None):
+        Example:
+            rowcount = db.execute(
+                "insert into foo(a,b) values(:a,:b)",
+                {"a": 1, "b": "one"}
+            )
+
+            批量写入
+            rowcount = db.execute(
+                "insert into foo(a,b) values(:a,:b)",
+                [
+                    {"a": 1, "b": "one"},
+                    {"a": 2, "b": "two"}
+                ]
+            )
+        """
+        if args is None or isinstance(args, dict):
+            self.driver.execute(sql, args)
+            rowcount = self.driver.rowcount()
+            if autocommit:
+                self.commit()
+            return rowcount
+        elif isinstance(args, Iterable):
+            self.driver.execute_many(sql, args)
+            rowcount = self.driver.rowcount()
+            if autocommit:
+                self.commit()
+            return rowcount
+        else:
+            raise ParameterError("'params'参数类型无效")
+
+    def _get_records(self, batch_size, columns=None):
         records = self.driver.fetchmany(batch_size)
         while records:
             if columns:
@@ -80,30 +108,30 @@ class Database(BaseDatabase):
     def get_columns(self):
         return [i[0].lower() for i in self.driver.description()]
 
-    def read(self, sql, args=None, to_dict=True, batch_size=5000):
+    def read(self, sql, args=None, as_dict=True, batch_size=5000):
         """
         查询返回所有表记录
         :param sql: sql语句
         :param args: sql语句参数
-        :param to_dict: 返回记录是否转换成字典形式（True: [{"a": 1, "b": "one"}]， False: [(1, "one)]），默认为True
+        :param as_dict: 返回记录是否转换成字典形式（True: [{"a": 1, "b": "one"}]， False: [(1, "one)]），默认为True
         :param batch_size: 每次查询返回的缓存的数量，大数据量可以适当提高大小
         :return: 生成器对象
         """
         self.driver.execute(sql, args)
         columns = self.get_columns()
-        return Records(self._readall(batch_size, columns), columns, to_dict)
+        return Records(self._get_records(batch_size, columns), columns, as_dict)
 
-    def read_one(self, sql, args=None, to_dict=True):
+    def read_one(self, sql, args=None, as_dict=True):
         """
         查询返回一条表记录
         :param sql: sql语句
         :param args: sql语句参数
-        :param to_dict: 返回记录是否转换成字典形式（True: [{"a": 1, "b": "one"}]， False: [(1, "one)]），默认为True
+        :param as_dict: 返回记录是否转换成字典形式（True: [{"a": 1, "b": "one"}]， False: [(1, "one)]），默认为True
         :return: to_dict=True {"a": 1, "b": "one"}, to_dict=False (1, "one")
         """
         self.driver.execute(sql, args)
         record = self.driver.fetchone()
-        if to_dict:
+        if as_dict:
             if record is None:
                 return None
             else:
@@ -112,39 +140,13 @@ class Database(BaseDatabase):
         else:
             return record
 
-    def write(self, sql, args=None):
-        """
-        数据库写入操作：
-        :param sql: sql语句
-        :param args: sql语句参数
-        :return: 影响行数
-
-        Example:
-            rowcount = db.write(
-                "insert into foo(a,b) values(:a,:b)",
-                {"a": 1, "b": "one"}
-            )
-
-            批量写入
-            rowcount = db.write(
-                "insert into foo(a,b) values(:a,:b)",
-                [
-                    {"a": 1, "b": "one"},
-                    {"a": 2, "b": "two"}
-                ]
-            )
-        """
-        from collections.abc import Iterable
-        if args is None or isinstance(args, dict):
-            self.driver.execute(sql, args)
-            rowcount = self.driver.rowcount()
-            return rowcount
-        elif isinstance(args, Iterable):
-            self.driver.execute_many(sql, args)
-            rowcount = self.driver.rowcount()
-            return rowcount
-        else:
-            raise ParameterError("'params'参数类型无效")
+    @contextmanager
+    def transaction(self):
+        try:
+            yield
+            self.commit()
+        except:
+            self.rollback()
 
 
 def format_condition(condition):
@@ -178,6 +180,16 @@ class Table(object):
         self.name = name
         self.db = db
 
+    def insert(self, records):
+        """
+        表中插入记录
+        :param records: 要插入的记录数据，字典or字典列表
+        """
+        if isinstance(records, dict):
+            return self.insert_one(records)
+        else:
+            return self.insert_many(records)
+
     def update(self, condition, update):
         """
         表更新操作
@@ -188,7 +200,7 @@ class Table(object):
         condition, p1 = format_condition(condition)
         update, p2 = format_update(update)
         p1.update(p2)
-        return self.db.write(f"update {self.name} set {update}{condition}", p1)
+        return self.db.execute(f"update {self.name} set {update}{condition}", p1)
 
     def delete(self, condition):
         """
@@ -197,7 +209,7 @@ class Table(object):
         :return: 返回影响行数
         """
         condition, param = format_condition(condition)
-        return self.db.write(f"delete from {self.name}{condition}", param)
+        return self.db.execute(f"delete from {self.name}{condition}", param)
 
     def find_one(self, condition=None):
         """
@@ -221,16 +233,6 @@ class Table(object):
         return f"insert into {self.name} ({','.join(columns)})" \
                f" values ({','.join([':%s' % i for i in columns])})"
 
-    def insert(self, records):
-        """
-        表中插入记录
-        :param records: 要插入的记录数据，字典or字典列表
-        """
-        if isinstance(records, dict):
-            return self.insert_one(records)
-        else:
-            return self.insert_many(records)
-
     def insert_one(self, record):
         """
         表中插入一条记录
@@ -238,7 +240,7 @@ class Table(object):
         """
         if isinstance(record, dict):
             columns = record.keys()
-            return self.db.write(self._get_insert_sql(columns), record)
+            return self.db.execute(self._get_insert_sql(columns), record)
         else:
             raise ParameterError("无效的参数")
 
@@ -252,7 +254,7 @@ class Table(object):
         sample = records[0]
         if isinstance(sample, dict):
             columns = sample.keys()
-            return self.db.write(self._get_insert_sql(columns), records)
+            return self.db.execute(self._get_insert_sql(columns), records)
         else:
             raise ParameterError("无效的参数")
 

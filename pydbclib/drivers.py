@@ -49,7 +49,8 @@ class Driver(ABC):
     def description(self):
         # 去除hive表名前缀
         # {'pokes.foo': 238, 'pokes.bar': 'val_238'} => {'foo': 238, 'bar': 'val_238'}
-        return [(get_suffix(r[0]), *r[1:])for r in self._description()]
+        description = self._description()
+        return [(get_suffix(r[0]), *r[1:])for r in description] if description else description
 
     def _description(self):
         return self.session.description
