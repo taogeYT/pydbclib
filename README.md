@@ -4,7 +4,7 @@ pydbclib is a database utils for python
 
 ## Installation:
 ```shell script
-pip install 'pydbclib>=2.1'
+pip install 'pydbclib>=2.1' -i 'https://pypi.org/simple'
 ```
 
 ## A Simple Example:
@@ -29,7 +29,8 @@ with connect("sqlite:///:memory:") as db:
 #### 常用数据库连接示例  
 Common Driver  
 
-    # 使用普通数据库驱动连接，driver参数指定驱动包名称，如pymysql包driver='pymysql',connect函数其余的参数和driver参数指定的包的创建连接参数一致
+    # 使用普通数据库驱动连接，driver参数指定驱动包名称
+    # 例如pymysql包driver='pymysql',connect函数其余的参数和driver参数指定的包的创建连接参数一致
     # 连接mysql
     db = pydbclib.connect(user="user", password="password", database="test", driver="pymysql")
     # 连接oracle
