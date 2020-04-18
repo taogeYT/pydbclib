@@ -14,7 +14,7 @@ from pydbclib import connect
 
 class TestConnect(unittest.TestCase):
 
-    def test_Common_driver(self):
+    def test_common_driver(self):
         with connect(":memory:", driver="sqlite3") as db:
             db.execute("select 1")
         con = sqlite3.connect(":memory:")
@@ -48,9 +48,10 @@ class TestDataBase(unittest.TestCase):
         self.db.rollback()
         self.db.execute('DROP TABLE foo')
 
-    def test_write(self):
-        r = self.db.write("insert into foo(a,b) values(:a,:b)", [self.record]*10)
+    def test_execute(self):
+        r = self.db.execute("insert into foo(a,b) values(:a,:b)", [self.record]*10)
         self.assertEqual(r, 10)
+        self.assertEqual(self.db.execute("update foo set a=2"), 10)
 
     def test_read(self):
         r = self.db.read("select * from foo")
