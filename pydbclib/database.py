@@ -119,7 +119,11 @@ class Database(BaseDatabase):
         """
         self.driver.execute(sql, args)
         columns = self.get_columns()
-        return Records(self._get_records(batch_size, columns), columns, as_dict)
+        if as_dict:
+            records = self._get_records(batch_size, columns)
+        else:
+            records = self._get_records(batch_size)
+        return Records(records, columns, as_dict)
 
     def read_one(self, sql, args=None, as_dict=True):
         """

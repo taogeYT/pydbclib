@@ -61,6 +61,7 @@ class TestDataBase(unittest.TestCase):
         r = self.db.read("select * from foo").map(lambda x: {**x, "c": 3})
         self.assertEqual(r.get(1), [{**self.record, "c": 3}])
         self.assertEqual(self.db.read("select * from foo").get_all(), [self.record]*10)
+        self.assertEqual(self.db.read("select * from foo", as_dict=False).get(1), [(1, "1")])
 
     def test_read_one(self):
         self.db.get_table("foo").insert([self.record] * 10)

@@ -11,7 +11,7 @@ class Records(object):
     def __init__(self, rows, columns, as_dict):
         self._rows = rows
         self.columns = columns
-        self.to_dict = as_dict
+        self.as_dict = as_dict
         self._limit_num = None
 
     def __iter__(self):
@@ -57,7 +57,7 @@ class Records(object):
         #     return pandas.DataFrame(self, columns=self.columns)
         # else:
         #     return pandas.DataFrame(self)
-        if self.to_dict:
+        if self.as_dict:
             return pandas.DataFrame.from_records(self)
         else:
             return pandas.DataFrame.from_records(self, columns=self.columns)
