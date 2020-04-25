@@ -4,11 +4,12 @@
 @desc:
 """
 from abc import ABC, abstractmethod
-from collections.abc import Iterable
+from collections.abc import Iterator
 from contextlib import contextmanager
 
 from pydbclib.exceptions import ParameterError
 from pydbclib.record import Records
+from pydbclib.utils import _chunk_params
 
 
 class BaseDatabase(ABC):
@@ -86,11 +87,20 @@ class Database(BaseDatabase):
             if autocommit:
                 self.commit()
             return rowcount
-        elif isinstance(args, Iterable):
+        elif isinstance(args, (list, tuple)):
             self.driver.execute_many(sql, args)
             rowcount = self.driver.rowcount()
             if autocommit:
                 self.commit()
+            return rowcount
+        else:
+            raise ParameterError("'params'参数类型无效")
+
+    def bulk(self, sql, args, batch_size=10000):
+        if isinstance(args, (list, tuple, Iterator)):
+            rowcount = 0
+            for batch in _chunk_params(args, batch_size):
+                rowcount += self.driver.bulk(sql, batch)
             return rowcount
         else:
             raise ParameterError("'params'参数类型无效")

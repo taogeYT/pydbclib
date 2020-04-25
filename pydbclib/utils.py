@@ -18,6 +18,17 @@ def to_camel_style(text):
     return res
 
 
+def _chunk_params(params, batch_size):
+    cache = []
+    for param in params:
+        cache.append(param)
+        if len(cache) >= batch_size:
+            yield cache
+            cache = []
+    if cache:
+        yield cache
+
+
 def get_suffix(text):
     left, right = os.path.splitext(text)
     return right[1:] if right else left

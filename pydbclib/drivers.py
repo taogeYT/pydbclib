@@ -28,11 +28,19 @@ class Driver(ABC):
     def session(self):
         pass
 
+    @abstractmethod
     def execute(self, sql, params=None, **kw):
         pass
 
+    @abstractmethod
     def execute_many(self, sql, params=None, **kw):
         pass
+
+    def bulk(self, sql, params):
+        # return self.connection.execute(sql, params).rowcount
+        self.execute_many(sql, params)
+        self.commit()
+        return self.rowcount()
 
     def fetchone(self):
         return self.session.fetchone()
