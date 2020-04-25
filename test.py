@@ -53,6 +53,11 @@ class TestDataBase(unittest.TestCase):
         self.assertEqual(r, 10)
         self.assertEqual(self.db.execute("update foo set a=2"), 10)
 
+    def test_bulk(self):
+        r = self.db.bulk("insert into foo(a,b) values(:a,:b)", (r for r in [self.record]*100), batch_size=10)
+        self.assertEqual(r, 100)
+        self.assertEqual(self.db.read("select * from foo").get_all(), [self.record]*100)
+
     def test_read(self):
         r = self.db.read("select * from foo")
         self.assertEqual(r.get(1), [])
