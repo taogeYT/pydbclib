@@ -109,7 +109,6 @@ class Database(BaseDatabase):
         records = self.driver.fetchmany(batch_size)
         while records:
             if columns:
-                # columns = [i[0].lower() for i in self.driver.description()]
                 records = [dict(zip(columns, i)) for i in records]
             for record in records:
                 yield record
@@ -128,12 +127,12 @@ class Database(BaseDatabase):
         :return: 生成器对象
         """
         self.driver.execute(sql, args)
-        columns = self.get_columns()
         if as_dict:
+            columns = self.get_columns()
             records = self._get_records(batch_size, columns)
         else:
             records = self._get_records(batch_size)
-        return Records(records, columns, as_dict)
+        return Records(records, as_dict)
 
     def read_one(self, sql, args=None, as_dict=True):
         """
@@ -204,6 +203,16 @@ class Table(object):
         else:
             return self.insert_many(records)
 
+    def bulk_insert(self, records, batch_size=10000):
+        if isinstance(records, (list, tuple, Iterator)):
+            rowcount = 0
+            for batch in _chunk_params(records, batch_size):
+                rowcount += self.insert_many(batch)
+                self.db.commit()
+            return rowcount
+        else:
+            raise ParameterError("'params'参数类型无效")
+
     def update(self, condition, update):
         """
         表更新操作
@@ -264,7 +273,7 @@ class Table(object):
         :param records: 要插入的记录数据，字典集合
         """
         if not isinstance(records, (tuple, list)):
-            raise ParameterError("records param must iterable")
+            raise ParameterError("records param must list or tuple")
         sample = records[0]
         if isinstance(sample, dict):
             columns = sample.keys()
