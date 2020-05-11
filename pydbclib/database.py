@@ -9,7 +9,7 @@ from contextlib import contextmanager
 
 from pydbclib.exceptions import ParameterError
 from pydbclib.record import Records
-from pydbclib.utils import batch_dataset
+from pydbclib.utils import batch_dataset, get_columns
 
 
 class BaseDatabase(ABC):
@@ -114,9 +114,6 @@ class Database(BaseDatabase):
                 yield record
             records = self.driver.fetchmany(batch_size)
 
-    def get_columns(self):
-        return [i[0].lower() for i in self.driver.description()]
-
     def read(self, sql, args=None, as_dict=True, batch_size=5000):
         """
         查询返回所有表记录
@@ -128,7 +125,7 @@ class Database(BaseDatabase):
         """
         self.driver.execute(sql, args)
         if as_dict:
-            columns = self.get_columns()
+            columns = get_columns(self.driver.description())
             records = self._get_records(batch_size, columns)
         else:
             records = self._get_records(batch_size)
@@ -148,7 +145,7 @@ class Database(BaseDatabase):
             if record is None:
                 return None
             else:
-                columns = self.get_columns()
+                columns = get_columns(self.driver.description())
                 return dict(zip(columns, record))
         else:
             return record
@@ -192,6 +189,10 @@ class Table(object):
     def __init__(self, name, db):
         self.name = name
         self.db = db
+
+    def get_columns(self):
+        self.db.read_one(f"select * from {self.name}")
+        return get_columns(self.db.driver.description())
 
     def insert(self, records):
         """
@@ -280,6 +281,3 @@ class Table(object):
             return self.db.execute(self._get_insert_sql(columns), records)
         else:
             raise ParameterError("无效的参数")
-
-    # def merge(self):
-    #     pass
