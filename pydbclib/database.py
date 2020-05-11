@@ -9,7 +9,7 @@ from contextlib import contextmanager
 
 from pydbclib.exceptions import ParameterError
 from pydbclib.record import Records
-from pydbclib.utils import _chunk_params
+from pydbclib.utils import batch_dataset
 
 
 class BaseDatabase(ABC):
@@ -99,14 +99,14 @@ class Database(BaseDatabase):
     def bulk(self, sql, args, batch_size=10000):
         if isinstance(args, (list, tuple, Iterator)):
             rowcount = 0
-            for batch in _chunk_params(args, batch_size):
+            for batch in batch_dataset(args, batch_size):
                 rowcount += self.driver.bulk(sql, batch)
             return rowcount
         else:
             raise ParameterError("'params'参数类型无效")
 
     def _get_records(self, batch_size, columns=None):
-        records = self.driver.fetchmany(batch_size)
+        records = self.driver.fetchmany(100)
         while records:
             if columns:
                 records = [dict(zip(columns, i)) for i in records]
@@ -199,15 +199,15 @@ class Table(object):
         :param records: 要插入的记录数据，字典or字典列表
         """
         if isinstance(records, dict):
-            return self.insert_one(records)
+            return self._insert_one(records)
         else:
-            return self.insert_many(records)
+            return self._insert_many(records)
 
     def bulk_insert(self, records, batch_size=10000):
         if isinstance(records, (list, tuple, Iterator)):
             rowcount = 0
-            for batch in _chunk_params(records, batch_size):
-                rowcount += self.insert_many(batch)
+            for batch in batch_dataset(records, batch_size):
+                rowcount += self._insert_many(batch)
                 self.db.commit()
             return rowcount
         else:
@@ -256,7 +256,7 @@ class Table(object):
         return f"insert into {self.name} ({','.join(columns)})" \
                f" values ({','.join([':%s' % i for i in columns])})"
 
-    def insert_one(self, record):
+    def _insert_one(self, record):
         """
         表中插入一条记录
         :param record: 要插入的记录数据，字典类型
@@ -267,7 +267,7 @@ class Table(object):
         else:
             raise ParameterError("无效的参数")
 
-    def insert_many(self, records):
+    def _insert_many(self, records):
         """
         表中插入多条记录
         :param records: 要插入的记录数据，字典集合

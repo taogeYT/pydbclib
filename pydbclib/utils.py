@@ -18,10 +18,10 @@ def to_camel_style(text):
     return res
 
 
-def _chunk_params(params, batch_size):
+def batch_dataset(dataset, batch_size):
     cache = []
-    for param in params:
-        cache.append(param)
+    for data in dataset:
+        cache.append(data)
         if len(cache) >= batch_size:
             yield cache
             cache = []
