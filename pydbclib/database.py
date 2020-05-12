@@ -191,7 +191,7 @@ class Table(object):
         self.db = db
 
     def get_columns(self):
-        self.db.read_one(f"select * from {self.name}")
+        self.db.execute(f"select * from {self.name} where 1=0")
         return get_columns(self.db.driver.description())
 
     def insert(self, records):
