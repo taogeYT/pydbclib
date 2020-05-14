@@ -84,19 +84,16 @@ class Database(BaseDatabase):
         if args is None or isinstance(args, dict):
             self.driver.execute(sql, args)
             rowcount = self.driver.rowcount()
-            if autocommit:
-                self.commit()
-            return rowcount
         elif isinstance(args, (list, tuple)):
             self.driver.execute_many(sql, args)
             rowcount = self.driver.rowcount()
-            if autocommit:
-                self.commit()
-            return rowcount
         else:
             raise ParameterError("'params'参数类型无效")
+        if autocommit:
+            self.commit()
+        return rowcount
 
-    def bulk(self, sql, args, batch_size=10000):
+    def bulk(self, sql, args, batch_size=100000):
         if isinstance(args, (list, tuple, Iterator)):
             rowcount = 0
             for batch in batch_dataset(args, batch_size):
@@ -106,7 +103,7 @@ class Database(BaseDatabase):
             raise ParameterError("'params'参数类型无效")
 
     def _get_records(self, batch_size, columns=None):
-        records = self.driver.fetchmany(100)
+        records = self.driver.fetchmany(1000)
         while records:
             if columns:
                 records = [dict(zip(columns, i)) for i in records]
@@ -114,7 +111,7 @@ class Database(BaseDatabase):
                 yield record
             records = self.driver.fetchmany(batch_size)
 
-    def read(self, sql, args=None, as_dict=True, batch_size=5000):
+    def read(self, sql, args=None, as_dict=True, batch_size=10000):
         """
         查询返回所有表记录
         :param sql: sql语句
@@ -204,7 +201,7 @@ class Table(object):
         else:
             return self._insert_many(records)
 
-    def bulk_insert(self, records, batch_size=10000):
+    def bulk(self, records, batch_size=100000):
         if isinstance(records, (list, tuple, Iterator)):
             rowcount = 0
             for batch in batch_dataset(records, batch_size):
