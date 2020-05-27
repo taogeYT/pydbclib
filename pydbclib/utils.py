@@ -34,10 +34,6 @@ def get_suffix(text):
     return right[1:] if right else left
 
 
-def get_columns(description):
-    return [i[0].lower() for i in description]
-
-
 def demo_connect():
     from . import connect
     db = connect("sqlite:///:memory:")

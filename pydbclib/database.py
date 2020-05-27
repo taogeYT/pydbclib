@@ -9,7 +9,7 @@ from contextlib import contextmanager
 
 from pydbclib.exceptions import ParameterError
 from pydbclib.record import Records
-from pydbclib.utils import batch_dataset, get_columns
+from pydbclib.utils import batch_dataset
 
 
 class BaseDatabase(ABC):
@@ -102,6 +102,9 @@ class Database(BaseDatabase):
         else:
             raise ParameterError("'params'参数类型无效")
 
+    def get_columns(self):
+        return [i[0].lower() for i in self.driver.description()]
+
     def _get_records(self, batch_size, columns=None):
         records = self.driver.fetchmany(1000)
         while records:
@@ -122,7 +125,7 @@ class Database(BaseDatabase):
         """
         self.driver.execute(sql, args)
         if as_dict:
-            columns = get_columns(self.driver.description())
+            columns = self.get_columns()
             records = self._get_records(batch_size, columns)
         else:
             records = self._get_records(batch_size)
@@ -142,7 +145,7 @@ class Database(BaseDatabase):
             if record is None:
                 return None
             else:
-                columns = get_columns(self.driver.description())
+                columns = self.get_columns()
                 return dict(zip(columns, record))
         else:
             return record
@@ -189,7 +192,7 @@ class Table(object):
 
     def get_columns(self):
         self.db.execute(f"select * from {self.name} where 1=0")
-        return get_columns(self.db.driver.description())
+        return self.db.get_columns()
 
     def insert(self, records):
         """
