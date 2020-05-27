@@ -1,13 +1,13 @@
-# pydbclib: Python Database Connectivity Lib
+# Pydbclib
 
-pydbclib is a database utils for python
+Pydbclib is Python Database Connectivity Lib, a database toolkit for **Python 3.6+**
 
 ## Installation:
 ```shell script
-pip install 'pydbclib>=2.1' -i 'https://pypi.org/simple'
+pip3 install pydbclib
 ```
 
-## A Simple Example:
+## Example:
 
 ```python
 from pydbclib import connect
@@ -15,15 +15,12 @@ with connect("sqlite:///:memory:") as db:
     db.execute('create table foo(a integer, b varchar(20))')
     # 统一使用’:[name]'形式的SQL的占位符
     db.execute("insert into foo(a,b) values(:a,:b)", [{"a": 1, "b": "one"}]*4)
-    print(db.read("select * from foo").get_one())
-    print(db.read("select * from foo").get(2))
-    print(db.read("select * from foo").get_all())
-    print(db.read("select * from foo").limit(2).to_df())
-    db.get_table("foo").insert({"a": 2, "b": "two"})
-    print(db.get_table("foo").find_one({"a": 2}))
-    print(db.get_table("foo").find({"a": 1}).get(2))
-    print(db.get_table("foo").find().get_all())
-    print(db.get_table("foo").find().limit(2).to_df())
+    r = db.read("select * from foo")
+    print(r.to_df())
+    table = db.get_table("foo")
+    table.insert({"a": 2, "b": "two"})
+    r = table.find({"a": 2})
+    r.get_one()
 ```
 
 #### 常用数据库连接示例  
