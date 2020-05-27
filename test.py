@@ -73,6 +73,10 @@ class TestDataBase(unittest.TestCase):
         r = self.db.read_one("select * from foo")
         self.assertEqual(r, self.record)
 
+    def test_get_columns(self):
+        self.db.get_table("foo").find_one()
+        self.assertEqual(self.db.get_columns(), ["a", 'b'])
+
 
 class TestTable(unittest.TestCase):
     db = None
@@ -111,6 +115,9 @@ class TestTable(unittest.TestCase):
         self.assertEqual(self.table.find_one(), None)
         self.table.insert(self.record)
         self.assertEqual(self.table.find_one(), self.record)
+
+    def test_get_columns(self):
+        self.assertEqual(self.table.get_columns(), ["a", "b"])
 
     def test_update(self):
         self.table.insert([self.record]*10)
