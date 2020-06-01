@@ -11,16 +11,17 @@ pip3 install pydbclib
 
 ```python
 from pydbclib import connect
+# 使用with上下文，可以自动提交，自动关闭连接
 with connect("sqlite:///:memory:") as db:
     db.execute('create table foo(a integer, b varchar(20))')
-    # 统一使用’:[name]'形式的SQL的占位符
+    # 统一使用':[name]'形式的SQL的占位符
     db.execute("insert into foo(a,b) values(:a,:b)", [{"a": 1, "b": "one"}]*4)
-    r = db.read("select * from foo")
-    print(r.to_df())
-    table = db.get_table("foo")
-    table.insert({"a": 2, "b": "two"})
-    r = table.find({"a": 2})
-    r.get_one()
+    print(db.read("select * from foo").get_one())
+    print(db.read("select * from foo").get_all())
+    print(db.read("select * from foo").to_df())
+    db.get_table("foo").insert([{"a": 2, "b": "two"}]*2)
+    print(db.get_table("foo").find({"a": 2}).get_all())
+    print(db.get_table("foo").find().to_df())
 ```
 
 #### 常用数据库连接示例  
