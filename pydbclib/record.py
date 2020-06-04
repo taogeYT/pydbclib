@@ -41,7 +41,13 @@ class Records(object):
         return self.map(function)
 
     def limit(self, num):
-        self._rows = (r for i, r in enumerate(self._rows) if i < num)
+        def rows_limited(limit):
+            for i, r in enumerate(self._rows):
+                if i < limit:
+                    yield r
+                else:
+                    return None
+        self._rows = rows_limited(num)
         return self
 
     def get_one(self):
