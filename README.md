@@ -19,9 +19,10 @@ with connect("sqlite:///:memory:") as db:
     print(db.read("select * from foo").get_one())
     print(db.read("select * from foo").get_all())
     print(db.read("select * from foo").to_df())
+
     db.get_table("foo").insert([{"a": 2, "b": "two"}]*2)
-    print(db.get_table("foo").find({"a": 2}).get_all())
-    print(db.get_table("foo").find().to_df())
+    print(db.get_table("foo").find().get_all())
+    print(db.get_table("foo").find({"a": 2}).to_df())
 ```
 
 #### 常用数据库连接示例  
@@ -56,4 +57,4 @@ Sqlalchemy Driver
 
 ### 详细使用文档 
 
-https://blog.csdn.net/li_yatao/article/details/105185444
+https://blog.csdn.net/li_yatao/article/details/79685992
