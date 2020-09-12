@@ -6,6 +6,16 @@
 import itertools
 
 
+def to_df_iterator(records, batch_size):
+    import pandas
+    while 1:
+        _records = records.get(batch_size)
+        if _records:
+            yield pandas.DataFrame.from_records(_records)
+        else:
+            return None
+
+
 class Records(object):
 
     def __init__(self, rows, as_dict):
@@ -41,13 +51,13 @@ class Records(object):
         return self.map(function)
 
     def limit(self, num):
-        def rows_limited(limit):
-            for i, r in enumerate(self._rows):
+        def rows_limited(rows, limit):
+            for i, r in enumerate(rows):
                 if i < limit:
                     yield r
                 else:
                     return None
-        self._rows = rows_limited(num)
+        self._rows = rows_limited(self._rows, num)
         return self
 
     def get_one(self):
@@ -65,18 +75,9 @@ class Records(object):
             import pandas
             return pandas.DataFrame.from_records(self)
         else:
-            return self._to_df_iterator(batch_size)
+            return to_df_iterator(self, batch_size)
 
-    def _to_df_iterator(self, batch_size):
-        import pandas
-        while 1:
-            records = self.get(batch_size)
-            if records:
-                yield pandas.DataFrame.from_records(records)
-            else:
-                return None
-
-    def to_csv(self, file_path, sep=',', header=False, columns=None, batch_size=100000):
+    def to_csv(self, file_path, sep=',', header=False, columns=None, batch_size=100000, **kwargs):
         """
         用于大数据量分批写入文件
         :param file_path: 文件路径
@@ -87,6 +88,6 @@ class Records(object):
         """
         mode = "w"
         for df in self.to_df(batch_size=batch_size):
-            df.to_csv(file_path, sep=sep, index=False, header=header, columns=columns, mode=mode)
+            df.to_csv(file_path, sep=sep, index=False, header=header, columns=columns, mode=mode, **kwargs)
             mode = "a"
             header = False
