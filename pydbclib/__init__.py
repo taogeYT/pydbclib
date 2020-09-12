@@ -6,11 +6,12 @@ from pydbclib.database import Database
 from pydbclib.drivers import CommonDriver, SQLAlchemyDriver
 
 __author__ = "liyatao"
-__version__ = '2.1.8'
+__version__ = '2.2'
 
 
 def connect(*args, **kwargs):
     driver = kwargs.get("driver", "sqlalchemy")
+    kwargs.update(driver=driver)
     if isinstance(driver, str):
         driver_class = {"sqlalchemy": SQLAlchemyDriver}.get(driver.lower(), CommonDriver)
     elif hasattr(driver, "cursor"):
