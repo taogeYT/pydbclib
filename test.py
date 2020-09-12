@@ -50,13 +50,13 @@ class TestDataBase(unittest.TestCase):
 
     def test_execute(self):
         r = self.db.execute("insert into foo(a,b) values(:a,:b)", [self.record]*10)
-        self.assertEqual(r, 10)
-        self.assertEqual(self.db.execute("update foo set a=2"), 10)
+        self.assertEqual(r.rowcount, 10)
+        self.assertEqual(self.db.execute("update foo set a=2").rowcount, 10)
 
     def test_bulk(self):
-        r = self.db.bulk("insert into foo(a,b) values(:a,:b)", (r for r in [self.record]*100), batch_size=10)
-        self.assertEqual(r, 100)
-        self.assertEqual(self.db.read("select * from foo").get_all(), [self.record]*100)
+        r = self.db.bulk("insert into foo(a,b) values(:a,:b)", (r for r in [self.record]*1000), batch_size=100)
+        self.assertEqual(r, 1000)
+        self.assertEqual(self.db.read("select * from foo").get_all(), [self.record]*1000)
 
     def test_read(self):
         r = self.db.read("select * from foo")
@@ -72,10 +72,6 @@ class TestDataBase(unittest.TestCase):
         self.db.get_table("foo").insert([self.record] * 10)
         r = self.db.read_one("select * from foo")
         self.assertEqual(r, self.record)
-
-    def test_get_columns(self):
-        self.db.get_table("foo").find_one()
-        self.assertEqual(self.db.get_columns(), ["a", 'b'])
 
 
 class TestTable(unittest.TestCase):
@@ -103,6 +99,19 @@ class TestTable(unittest.TestCase):
         self.assertEqual(self.table.insert(self.record), 1)
         self.assertEqual(self.table.insert([self.record]*10), 10)
 
+    def test_bulk(self):
+        self.assertEqual(self.table.bulk([self.record]*1000, batch_size=100), 1000)
+        self.assertEqual(self.table.find().get_all(), [self.record]*1000)
+
+    def test_update(self):
+        self.table.insert([self.record]*10)
+        self.assertEqual(self.table.update({"a": 1}, {"b": "2"}), 10)
+        self.assertEqual(self.table.find({"a": 1}).get(10), [{"a": 1, "b": "2"}]*10)
+
+    def test_delete(self):
+        self.table.insert([self.record] * 10)
+        self.assertEqual(self.table.delete({"a": 1}), 10)
+
     def test_find(self):
         self.assertEqual(self.table.find().get_one(), None)
         self.table.insert(self.record)
@@ -115,18 +124,6 @@ class TestTable(unittest.TestCase):
         self.assertEqual(self.table.find_one(), None)
         self.table.insert(self.record)
         self.assertEqual(self.table.find_one(), self.record)
-
-    def test_get_columns(self):
-        self.assertEqual(self.table.get_columns(), ["a", "b"])
-
-    def test_update(self):
-        self.table.insert([self.record]*10)
-        self.assertEqual(self.table.update({"a": 1}, {"b": "2"}), 10)
-        self.assertEqual(self.table.find({"a": 1}).get(10), [{"a": 1, "b": "2"}]*10)
-
-    def test_delete(self):
-        self.table.insert([self.record] * 10)
-        self.assertEqual(self.table.delete({"a": 1}), 10)
 
     def test_to_df(self):
         self.assertTrue(self.table.find({"a": 1}).to_df().empty)
