@@ -1,6 +1,6 @@
 # Pydbclib
 
-Pydbclib is Python Database Connectivity Lib, a database toolkit for **Python 3.6+**
+Pydbclib is Python Database Connectivity Lib, a general database operation toolkit for **Python 3.6+**
 
 ## Installation:
 ```shell script
@@ -19,10 +19,14 @@ with connect("sqlite:///:memory:") as db:
     print(db.read("select * from foo").get_one())
     print(db.read("select * from foo").get_all())
     print(db.read("select * from foo").to_df())
-
-    db.get_table("foo").insert([{"a": 2, "b": "two"}]*2)
-    print(db.get_table("foo").find().get_all())
-    print(db.get_table("foo").find({"a": 2}).to_df())
+    
+    # 对表常用操作的封装
+    table = db.get_table("foo")
+    table.insert([{"a": 2, "b": "two"}]*2)  # 插入两条记录
+    table.find({"b": "two"}).get_all()  # 查出b='two'的所有记录
+    table.update({"a": 2, "b": "two"}, {"b": "2"})  # 将a=2 and b='two'的所有记录的b字段值更新为'2'
+    table.find({"a": 2}).get_all()  # 查出a=2的所有记录
+    table.delete({"a": 2})  # 删除a=2的所有记录
 ```
 
 #### 常用数据库连接示例  
