@@ -25,7 +25,7 @@ class Compiler(object):
         return self.sql, self.parameters
 
 
-class DefaultCompiler(Compiler):
+class QmarkCompiler(Compiler):
     place_holder = "?"
 
     def process_one(self):
@@ -81,25 +81,25 @@ class DefaultCompiler(Compiler):
         return "".join(t.value for t in tokens), keys
 
 
-class PyFormatCompiler(DefaultCompiler):
+class FormatCompiler(QmarkCompiler):
     place_holder = "%s"
 
 
+"""
+‘format’：表示使用 %s
+‘pyformat:表示使用 %(name)s
+‘qmark’：表示使用 ?
+‘numeric’: 表示使用 :1
+‘named’: 表示使用 :name
+"""
 compilers = {
-    "standard": Compiler,
-    "default": DefaultCompiler,
-    "pyformat": PyFormatCompiler
-}
-
-default_place_holders = {
-    "cx_Oracle": "standard",
-    "pymysql": "pyformat",
-    "pyodbc": "default",
-    "sqlite3": "default",
-    "impala": "default"
+    "named": Compiler,
+    "qmark": QmarkCompiler,
+    "format": FormatCompiler,
+    "pyformat": FormatCompiler
 }
 
 
 if __name__ == "__main__":
-    print(DefaultCompiler("insert into test(id, name, age) values(:a, ':a', :b)", [{"a": 12, "b": "lyt"}]).process())
-    print(DefaultCompiler("insert into test(id, name, age) values(:a, ':a', :b)", None).process())
+    print(QmarkCompiler("insert into test(id, name, age) values(:a, ':a', :b)", [{"a": 12, "b": "lyt"}]).process())
+    print(QmarkCompiler("insert into test(id, name, age) values(:a, ':a', :b)", None).process())

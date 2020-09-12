@@ -18,6 +18,16 @@ def to_camel_style(text):
     return res
 
 
+def get_records(result, batch_size, columns=None):
+    records = result.fetchmany(1000)
+    while records:
+        if columns:
+            records = [dict(zip(columns, i)) for i in records]
+        for record in records:
+            yield record
+        records = result.fetchmany(batch_size)
+
+
 def batch_dataset(dataset, batch_size):
     cache = []
     for data in dataset:
@@ -43,11 +53,6 @@ def demo_connect():
     record = {"a": 2, "b": "two"}
     db.execute("INSERT INTO foo(a,b) values(:a,:b)", [record] * 10)
     return db
-
-
-def hive_connect(host="localhost", port=10000, db="default"):
-    from . import connect
-    return connect(f'hive://{host}:{port}/{db}')
 
 
 if __name__ == '__main__':
