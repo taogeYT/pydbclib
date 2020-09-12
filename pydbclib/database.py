@@ -221,23 +221,33 @@ class Table(object):
         condition, param = format_condition(condition)
         return self.db.execute(f"delete from {self.name}{condition}", param).rowcount
 
-    def find_one(self, condition=None):
+    def find_one(self, condition=None, fields=None):
         """
         按条件查询一条表记录
         :param condition: 查询条件，字典类型或者sql条件表达式
+        :param fields: 指定返回的字段
         :return: 字典类型，如 {"a": 1, "b": "one"}
         """
+        if fields is None:
+            fields = "*"
+        else:
+            fields = ','.join(fields)
         condition, param = format_condition(condition)
-        return self.db.read_one(f"select * from {self.name}{condition}", param)
+        return self.db.read_one(f"select {fields} from {self.name}{condition}", param)
 
-    def find(self, condition=None):
+    def find(self, condition=None, fields=None):
         """
         按条件查询所有符合条件的表记录
         :param condition: 查询条件，字典类型或者sql条件表达式
+        :param fields: 指定返回的字段
         :return: 生成器类型
         """
+        if fields is None:
+            fields = "*"
+        else:
+            fields = ','.join(fields)
         condition, param = format_condition(condition)
-        return self.db.read(f"select * from {self.name}{condition}", param)
+        return self.db.read(f"select {fields} from {self.name}{condition}", param)
 
     def _get_insert_sql(self, columns):
         return f"insert into {self.name} ({','.join(columns)})" \
