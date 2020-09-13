@@ -67,6 +67,10 @@ class ResultProxy(object):
             description = self.context._cursor_description()
         return [(get_suffix(r[0]), *r[1:]) for r in description] if description else description
 
+    def get_columns(self):
+        """获取查询结果的字段名称"""
+        return [i[0].lower() for i in self.description]
+
 
 @Logger.class_logger()
 class CommonDriver(Driver):

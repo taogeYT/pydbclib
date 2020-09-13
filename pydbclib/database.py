@@ -85,7 +85,8 @@ class Database(object):
         """
         r = self.driver.execute(sql, args)
         if as_dict:
-            columns = [i[0].lower() for i in r.description]
+            # columns = [i[0].lower() for i in r.description]
+            columns = r.get_columns()
             records = get_records(r, batch_size, columns)
         else:
             records = get_records(r, batch_size)
@@ -105,7 +106,8 @@ class Database(object):
             if record is None:
                 return None
             else:
-                columns = [i[0].lower() for i in r.description]
+                # columns = [i[0].lower() for i in r.description]
+                columns = r.get_columns()
                 return dict(zip(columns, record))
         else:
             return record
@@ -177,7 +179,8 @@ class Table(object):
     def get_columns(self):
         """获取表字段名称"""
         r = self.db.execute(f"select * from {self.name} where 1=0")
-        return [i[0].lower() for i in r.description]
+        # return [i[0].lower() for i in r.description]
+        return r.get_columns()
 
     def insert(self, records):
         """
