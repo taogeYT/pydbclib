@@ -3,7 +3,6 @@
 @time: 2020/3/26 11:30 上午
 @desc:
 """
-from abc import ABC, abstractmethod
 from collections.abc import Iterator
 
 from pydbclib.exceptions import ParameterError
