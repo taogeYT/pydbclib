@@ -95,6 +95,9 @@ class TestTable(unittest.TestCase):
         self.db.rollback()
         self.db.execute('DROP TABLE foo')
 
+    def test_get_columns(self):
+        self.assertEqual(self.table.get_columns(), ["a", "b"])
+
     def test_insert(self):
         self.assertEqual(self.table.insert(self.record), 1)
         self.assertEqual(self.table.insert([self.record]*10), 10)
