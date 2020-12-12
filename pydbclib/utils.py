@@ -4,6 +4,16 @@
 @desc:
 """
 import os
+import sys
+
+
+def get_dbapi_module(module_name):
+    if module_name in sys.modules and hasattr(sys.modules[module_name], "paramstyle"):
+        return module_name
+    elif '.' in module_name:
+        return get_dbapi_module(os.path.splitext(module_name)[0])
+    else:
+        raise ValueError("Unknown DBAPI")
 
 
 def to_camel_style(text):

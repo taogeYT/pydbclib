@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from log4py import Logger
 
 from pydbclib.sql import compilers
-from pydbclib.utils import get_suffix
+from pydbclib.utils import get_suffix, get_dbapi_module
 
 
 class Driver(ABC):
@@ -79,7 +79,7 @@ class CommonDriver(Driver):
         driver_param = kwargs.pop("driver")
         self._cursor = None
         if hasattr(driver_param, "cursor"):
-            self.driver_name = driver_param.__class__.__module__
+            self.driver_name = get_dbapi_module(driver_param.__class__.__module__)
             self.dbapi = sys.modules[self.driver_name]
             self.con = driver_param
         else:
