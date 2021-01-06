@@ -102,6 +102,8 @@ class Database(object):
         """
         r = self.driver.execute(sql, args)
         record = r.fetchone()
+        # Unbuffered Cursor needed
+        r.fetchall()
         if as_dict:
             if record is None:
                 return None
@@ -179,6 +181,7 @@ class Table(object):
     def get_columns(self):
         """获取表字段名称"""
         r = self.db.execute(f"select * from {self.name} where 1=0")
+        r.fetchall()
         # return [i[0].lower() for i in r.description]
         return r.get_columns()
 
