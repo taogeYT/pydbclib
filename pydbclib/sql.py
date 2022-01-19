@@ -21,6 +21,9 @@ class Compiler(object):
         self.sql = sql
         self.parameters = parameters
 
+    def process_one(self):
+        return self.sql, self.parameters
+
     def process(self):
         return self.sql, self.parameters
 
@@ -86,11 +89,11 @@ class FormatCompiler(QmarkCompiler):
 
 
 """
-‘format’：表示使用 %s
-‘pyformat:表示使用 %(name)s
-‘qmark’：表示使用 ?
-‘numeric’: 表示使用 :1
-‘named’: 表示使用 :name
+'format'：表示使用 %s
+'pyformat':表示使用 %(name)s
+'qmark'：表示使用 ?
+'numeric': 表示使用 :1
+'named': 表示使用 :name
 """
 compilers = {
     "named": Compiler,
